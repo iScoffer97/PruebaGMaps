@@ -1,0 +1,51 @@
+import pandas as pd
+import numpy as np
+from google.maps import directions_service, DistanceMatrixService
+from googlemaps.errors import ApiError, TimeoutRequest, OverQueryLimit, RequestDenied, UnknownValueError
+
+def optimize_route(addresses, api_key):
+    # Initialize the Google Maps API services
+    directions_service = directions_service.DirectionsService(client_key=api_key)
+    distance_matrix_service = DistanceMatrixService(client_key=api_key)
+
+    # Create a list to store the optimized route
+    optimized_route = []
+
+    # Start and end points
+    start_point = addresses[0]
+    end_point = addresses[-1]
+
+    # Create a list of waypoints
+    waypoints = addresses[1:-1]
+
+    # Optimize the route using the Google Maps API
+    try:
+        response = directions_service.directions(
+            origin=start_point,
+            destination=end_point,
+            waypoints=waypoints,
+            optimize_waypoints=True
+        )
+        optimized_route = response['legs']
+    except ApiError as e:
+        print(f"API Error: {e}")
+
+    # Calculate the total distance of the optimized route
+    total_distance = 0
+    for leg in optimized_route:
+        total_distance += leg['distance']['value']
+
+    # Print the optimized route and total distance
+    print("Optimized Route:")
+    for leg in optimized_route:
+        print(leg['start_address'])
+        print(leg['end_address'])
+        print(leg['distance']['text'])
+        print()
+    print(f"Total Distance: {total_distance} meters")
+
+# Read the addresses from the Excel file
+addresses = pd.read_excel('addresses.xlsx')['Address'].tolist()
+
+# Replace the API_KEY placeholder with your actual Google Maps API key
+optimize_route(addresses, 'YOUR_API_KEY')
